@@ -1,0 +1,6 @@
+{
+  "name": "Student Attendance Management System",
+  "description": "Comprehensive B.Tech Final Year Student Attendance Management System featuring Faculty Authentication, Department & Subject Management, Student Records, Attendance Marking, Reports, Chart Analytics, and Dark Mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
