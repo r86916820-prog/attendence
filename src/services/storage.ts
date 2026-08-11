@@ -18,10 +18,54 @@ export interface RegisteredAccount {
   passwordHash: string;
 }
 
+export const defaultDemoAccounts: RegisteredAccount[] = [
+  {
+    user: initialFaculty, // rajesh.sharma@college.edu
+    passwordHash: 'Faculty@123',
+  },
+  {
+    user: {
+      id: 2,
+      fullName: 'Dr. Vikram Varma',
+      email: 'vikram.varma@college.edu',
+      phone: '+91 98111 22233',
+      designation: 'Professor & HOD',
+      department: 'Electronics & Communication Engg',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250',
+    },
+    passwordHash: 'Faculty@123',
+  },
+  {
+    user: {
+      id: 3,
+      fullName: 'System Administrator',
+      email: 'admin@college.edu',
+      phone: '+91 99999 88888',
+      designation: 'System Administrator',
+      department: 'Computer Science & Engineering',
+      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250',
+    },
+    passwordHash: 'Admin@1234',
+  },
+];
+
 export const storageService = {
   getAccounts(): RegisteredAccount[] {
     const data = localStorage.getItem(KEYS.ACCOUNTS);
-    return data ? JSON.parse(data) : [];
+    if (!data) {
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(defaultDemoAccounts));
+      return defaultDemoAccounts;
+    }
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(defaultDemoAccounts));
+    return defaultDemoAccounts;
   },
 
   registerAccount(user: FacultyUser, passwordHash: string): void {
@@ -35,9 +79,37 @@ export const storageService = {
     localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
   },
 
-  findAccount(email: string): RegisteredAccount | undefined {
+  findAccount(identifier: string): RegisteredAccount | undefined {
     const accounts = this.getAccounts();
-    return accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase());
+    const clean = identifier.trim().toLowerCase();
+    const cleanDigits = clean.replace(/\D/g, ''); // Digits only for phone matching
+
+    return accounts.find(a => {
+      const emailMatch = a.user.email.toLowerCase() === clean;
+      const phoneClean = a.user.phone ? a.user.phone.toLowerCase() : '';
+      const phoneDigits = phoneClean.replace(/\D/g, '');
+      
+      const phoneExactMatch = phoneClean === clean;
+      const phoneDigitsMatch = cleanDigits.length >= 7 && phoneDigits.length >= 7 && (phoneDigits.endsWith(cleanDigits) || cleanDigits.endsWith(phoneDigits));
+
+      return emailMatch || phoneExactMatch || phoneDigitsMatch;
+    });
+  },
+
+  updatePassword(identifier: string, newPasswordHash: string): boolean {
+    const accounts = this.getAccounts();
+    const account = this.findAccount(identifier);
+    if (!account) return false;
+
+    const updatedAccounts = accounts.map(a => {
+      if (a.user.email.toLowerCase() === account.user.email.toLowerCase()) {
+        return { ...a, passwordHash: newPasswordHash };
+      }
+      return a;
+    });
+
+    localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(updatedAccounts));
+    return true;
   },
   getFaculty(): FacultyUser {
     const data = localStorage.getItem(KEYS.FACULTY);
